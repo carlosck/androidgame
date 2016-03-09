@@ -72,6 +72,15 @@
                 android:text="@string/action_sign_in"
                 android:textStyle="bold"/>
 
+            <TextView
+                android:layout_width="243dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:id="@+id/errorLogin"
+                android:layout_gravity="center_horizontal"
+                android:textAlignment="center"
+                android:textColor="#ea0d0d"/>
+
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

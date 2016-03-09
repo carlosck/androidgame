@@ -82,6 +82,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    protected TextView mErrorLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +103,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 return false;
             }
         });
+
+        mErrorLogin = (TextView) findViewById(R.id.errorLogin);
 
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
@@ -350,8 +353,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
 
             // TODO: register the new account here.
-
-            return doLogin(this.mEmail,this.mPassword);
+            boolean regresa=doLogin(this.mEmail,this.mPassword);
+            Log.e(TAG,"regresa");
+            Log.e(TAG,"-->"+regresa+"<--");
+            return regresa;
         }
 
         @Override
@@ -361,7 +366,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
                 Log.e(TAG,"pos fuga");
-                finish();
+                //finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
@@ -379,10 +384,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             Log.e(TAG,"doLogin->");
             URL url;
             String response = "";
+            boolean error=false;
 
             try
             {
-                url = new URL("http://192.168.0.15:3000/login/");
+                url = new URL("http://192.168.0.26:3000/login/");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);
@@ -411,19 +417,40 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }
                 Log.e(TAG," response-> "+responseCode);
 
+                String line;
                 response="";
+                Log.e(TAG," asdasd ");
+
+
+
+                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                while((line=br.readLine()) !=null)
+                {
+                    response+=line;
+                }
+                Log.e(TAG,"  <-->>> ");
+                Log.e(TAG,response);
+                JSONObject det = new JSONObject(response);
+                Log.e(TAG," "+det.getString("detail"));
+                mErrorLogin.setText(det.getString("detail"));
+
                 switch(responseCode)
                 {
                     case HttpsURLConnection.HTTP_OK:
                         // TODO: 2/5/16 make a read response function
-                        String line;
-                        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-                        while((line=br.readLine()) !=null)
-                        {
-                            response+=line;
-                        }
+                        //mErrorLogin.setText("");
+
+
                     break;
                     case HttpURLConnection.HTTP_NOT_FOUND:
+                        Log.e(TAG,"NOT FOUND");
+                        Log.e(TAG,response);
+                        break;
+
+                    case HttpURLConnection.HTTP_UNAUTHORIZED:
+                        Log.e(TAG,"HTTP_UNAUTHORIZED");
+                        mErrorLogin.setText(" ERROR LOGIN");
+                        break;
 
                 }
 
@@ -431,9 +458,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             }
             catch(Exception e)
             {
+                Log.e(TAG,"Connection Error");
                 e.printStackTrace();
             }
-            Log.e(TAG,response);
+
 
             return true;
         }
