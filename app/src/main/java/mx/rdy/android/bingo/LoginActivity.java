@@ -3,6 +3,7 @@ package mx.rdy.android.bingo;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.StrictMode;
 import android.support.annotation.NonNull;
@@ -64,6 +65,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      */
     private static final int REQUEST_READ_CONTACTS = 0;
     private static final String TAG = "Bingo.android.rdy.mx";
+    static final int LOGIN_TRUE = 10;
+    static final int LOGIN_CANCEL_CODE = 20;
 
     /**
      * A dummy authentication store containing known user names and passwords.
@@ -366,6 +369,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
                 Log.e(TAG,"pos fuga");
+
                 //finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
@@ -417,29 +421,38 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }
                 Log.e(TAG," response-> "+responseCode);
 
-                String line;
-                response="";
-                Log.e(TAG," asdasd ");
-
-
-
-                BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-                while((line=br.readLine()) !=null)
-                {
-                    response+=line;
-                }
-                Log.e(TAG,"  <-->>> ");
-                Log.e(TAG,response);
-                JSONObject det = new JSONObject(response);
-                Log.e(TAG," "+det.getString("detail"));
-                mErrorLogin.setText(det.getString("detail"));
+                Intent returnIntent = new Intent();
 
                 switch(responseCode)
                 {
                     case HttpsURLConnection.HTTP_OK:
                         // TODO: 2/5/16 make a read response function
-                        //mErrorLogin.setText("");
+                        String line;
+                        response="";
 
+                        BufferedReader br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+                        while((line=br.readLine()) !=null)
+                        {
+                            response+=line;
+                        }
+                        Log.e(TAG,"  <-->>> ");
+                        Log.e(TAG,response);
+                        JSONObject det = new JSONObject(response);
+                        error = det.getBoolean("error");
+                        if(error)
+                        {
+                            setErrorText(det.getString("detail"));
+                        }
+                        else
+                        {
+                            Log.e(TAG," "+det.getString("token"));
+                        }
+                        Log.e(TAG," "+det.getString("detail"));
+
+
+                        returnIntent.putExtra("token",det.getString("token"));
+                        setResult(LOGIN_TRUE, returnIntent);
+                        finish();
 
                     break;
                     case HttpURLConnection.HTTP_NOT_FOUND:
@@ -449,7 +462,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                     case HttpURLConnection.HTTP_UNAUTHORIZED:
                         Log.e(TAG,"HTTP_UNAUTHORIZED");
-                        mErrorLogin.setText(" ERROR LOGIN");
+                        //mErrorLogin.setText();
+                        setErrorText(" ERROR LOGIN");
+                        setResult(LOGIN_CANCEL_CODE, returnIntent);
+                        finish();
                         break;
 
                 }
@@ -459,6 +475,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             catch(Exception e)
             {
                 Log.e(TAG,"Connection Error");
+                setErrorText("Connection Error");
                 e.printStackTrace();
             }
 
@@ -482,6 +499,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             return result.toString();
         }
+
+        private void setErrorText(String msg)
+        {
+            mErrorLogin.setText(msg);
+        }
+
+
     }
 }
 
