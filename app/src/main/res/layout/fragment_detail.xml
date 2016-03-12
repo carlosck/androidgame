@@ -9,8 +9,53 @@
                 tools:context="mx.rdy.android.bingo.DetailActivity$PlaceholderFragment">
 
     <TextView
-        android:id="@+id/section_label"
+        android:id="@+id/detail_name_txt"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:layout_centerHorizontal="true"/>
+
+    <TextView
+        android:id="@+id/detail_username_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Username"
+        android:layout_below="@+id/detail_name_txt"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="35dp"/>
+
+    <TextView
+        android:id="@+id/detail_email_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Email"
+        android:layout_below="@+id/detail_username_txt"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="35dp"/>
+
+
+
+
+    <TextView
+        android:id="@+id/detail_credit_txt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="1500"
+        android:layout_below="@+id/detail_email_txt"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="33dp"/>
+
+    <TextView
+        android:id="@+id/detail_credits_tag"
+        android:text="@string/word_credit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_below="@+id/detail_credit_txt"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="33dp"/>
 
 </RelativeLayout>

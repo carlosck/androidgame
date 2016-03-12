@@ -1,5 +1,8 @@
 package mx.rdy.android.bingo;
 
+import android.content.Context;
+import android.content.Intent;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +13,8 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,11 +34,12 @@ public class DetailActivity extends AppCompatActivity {
      * {@link android.support.v4.app.FragmentStatePagerAdapter}.
      */
     private SectionsPagerAdapter mSectionsPagerAdapter;
-
+    private static final String TAG = "Bingo.android.rdy.mx";
     /**
      * The {@link ViewPager} that will host the section contents.
      */
     private ViewPager mViewPager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +67,20 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
+
+
+        /*
+        textUsername = (TextView) findViewById(R.id.detail_username_txt);
+        textEmail = (TextView) findViewById(R.id.detail_email_txt);
+        textCredit = (TextView) findViewById(R.id.detail_credit_txt);
+
+        //cacheElements();
+        //inicia();
+        textName.setText(user.getFirstName()+" "+user.getLastName());
+        textUsername.setText(user.getUsername());
+        textEmail.setText(user.getEmail());
+        textCredit.setText(user.getCredit());*/
+
     }
 
 
@@ -78,13 +98,15 @@ public class DetailActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+
+        if (item.getItemId() == android.R.id.home) {
+            finish();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 
     /**
      * A placeholder fragment containing a simple view.
@@ -95,7 +117,11 @@ public class DetailActivity extends AppCompatActivity {
          * fragment.
          */
         private static final String ARG_SECTION_NUMBER = "section_number";
-
+        private TextView textName;
+        private TextView textUsername;
+        private TextView textEmail;
+        private TextView textCredit;
+        private User user;
         public PlaceholderFragment() {
         }
 
@@ -115,9 +141,33 @@ public class DetailActivity extends AppCompatActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
+            Intent myIntent = getActivity().getIntent();
+            user=(User)myIntent.getSerializableExtra("user");
+
+            textName = (TextView) rootView.findViewById(R.id.detail_name_txt);
+            textUsername = (TextView) rootView.findViewById(R.id.detail_username_txt);
+            textEmail = (TextView) rootView.findViewById(R.id.detail_email_txt);
+            textCredit = (TextView) rootView.findViewById(R.id.detail_credit_txt);
+
+            //cacheElements(rootView);
+            init();
+            //textName.setText(user.getFirstName()+" "+user.getLastName());
+
+            //TextView textView = (TextView) rootView.findViewById(R.id.section_label);
+            //textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
             return rootView;
+        }
+        private void cacheElements(View rootView)
+        {
+
+        }
+        private void init()
+        {
+        textName.setText(user.getFirstName()+" "+user.getLastName());
+        textUsername.setText(user.getUsername());
+        textEmail.setText(user.getEmail());
+        textCredit.setText(""+user.getCredit());
+
         }
     }
 

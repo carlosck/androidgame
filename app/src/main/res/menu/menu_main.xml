@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="mx.rdy.android.bingo.MainActivity">
+    <item
+        android:id="@+id/menu_detail"
+        android:orderInCategory="100"
+        android:title="@string/menu_detail"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/menu_logout"
+        android:orderInCategory="200"
+        android:title="@string/menu_logout"
+        app:showAsAction="never"/>
+</menu>

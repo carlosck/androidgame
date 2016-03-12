@@ -14,6 +14,8 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
@@ -25,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -33,6 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import mx.rdy.android.bingo.User;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -43,14 +48,19 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     static final int LOGIN_REQUEST = 1;  // The request code
     static final int LOGIN_TRUE = 10;
-    private static String APIToken = "30576741c0bbc71743d933aff8506fd4a5efbaf4";
+    //private static String APIToken = "30576741c0bbc71743d933aff8506fd4a5efbaf4";
+    private static String APIToken = "";
     private GetDetailTask mDetailTask = null;
+
+    private boolean isLoged=false;
+    private User user;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
+        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -79,8 +89,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             public void onClick(View view) {
-                Intent detail = new Intent(MainActivity.this,DetailActivity.class);
-                startActivity(detail);
+                startDetail();
             }
         });
 
@@ -89,27 +98,54 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         creditsButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                Log.e(TAG,"credits");
                 mDetailTask = new GetDetailTask(APIToken);
                 mDetailTask.execute((Void) null);
             }
         });
+        if(APIToken==""){
+            startLogin();
+        }
+
+
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.menu_detail) {
+            Log.e(TAG,"click");
+            startDetail();
+            return true;
+        }
+
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         //super.onActivityResult(requestCode, resultCode, data);
-        Log.e(TAG,"requestCode-> "+requestCode);
-        Log.e(TAG,"resultCode-> "+resultCode);
+
         if(requestCode == LOGIN_REQUEST)
         {
 
             if(resultCode==LOGIN_TRUE)
             {
                 String token = (String)data.getSerializableExtra("token");
-                Log.e(TAG,"token desde main-> "+token);
+
                 APIToken = token;
-                loginButton.setVisibility(View.GONE);
+                //loginButton.setVisibility(View.GONE);
                 detailButton.setVisibility(View.VISIBLE);
                 showProgress(true);
                 mDetailTask = new GetDetailTask(APIToken);
@@ -119,22 +155,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
 
-    private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException {
-        StringBuilder result = new StringBuilder();
-        boolean first = true;
-        for(Map.Entry<String, String> entry : params.entrySet()){
-            if (first)
-                first = false;
-            else
-                result.append("&");
-
-            result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-            result.append("=");
-            result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-        }
-
-        return result.toString();
-    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
@@ -149,6 +169,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
+    }
+    private void startDetail()
+    {
+        Intent detail = new Intent(MainActivity.this,DetailActivity.class);
+        detail.putExtra("user", user);
+        startActivity(detail);
+    }
+    private void startLogin()
+    {
+        Intent login = new Intent(MainActivity.this,LoginActivity.class);
+        startActivityForResult(login,LOGIN_REQUEST);
     }
 
     private void showProgress(final boolean show) {
@@ -186,6 +217,34 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("key",APIToken);
+        outState.putSerializable("user",getUser());
+
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        APIToken = savedInstanceState.getString("key");
+        setUserObj( (User)savedInstanceState.getSerializable("user"));
+
+    }
+    public void setUser(JSONObject detail)
+    {
+        user = new User(detail);
+    }
+    public void setUserObj(User u)
+    {
+        user= u;
+    }
+    public User getUser()
+    {
+        return user;
+    }
+
     public class GetDetailTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String token;
@@ -198,13 +257,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-            Log.e(TAG,"GetDetailTask");
-
 
             // TODO: register the new account here.
-            boolean regresa=getCredit(APIToken);
-            Log.e(TAG,"regresa");
-            Log.e(TAG,"-->"+regresa+"<--");
+            boolean regresa=getCredit(token);
             return regresa;
         }
 
@@ -214,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             showProgress(false);
 
             if (success) {
-                Log.e(TAG,"pos fuga");
+
 
             } else {
 
@@ -229,7 +284,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         public boolean getCredit(String token)
         {
-            Log.e(TAG,"getCredit->");
             URL url;
             String response = "";
             boolean error=false;
@@ -241,7 +295,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);
                 conn.setRequestMethod("POST");
-                Log.e(TAG,"Token->"+token);
+
                 conn.setRequestProperty("Authorization","Token "+token);
                 conn.setDoInput(true);
                 conn.setDoOutput(true);
@@ -265,8 +319,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 {
                     responseCode = conn.getResponseCode();
                 }
-                Log.e(TAG," response-> "+responseCode);
-
 
                 switch(responseCode)
                 {
@@ -280,21 +332,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                         {
                             response+=line;
                         }
-                        Log.e(TAG,"  <-->>> ");
-                        Log.e(TAG,response);
-                        JSONObject det = new JSONObject(response);
-                        error = det.getBoolean("error");
-                        if(error)
-                        {
-                            setErrorText(det.getString("detail"));
-                        }
-                        else
-                        {
-                            Log.e(TAG," "+det.getString("token"));
-                        }
-                        Log.e(TAG," "+det.getString("detail"));
+                        JSONObject detail = new JSONObject(response);
 
-
+                        setUser(detail);
 
                         break;
                     case HttpURLConnection.HTTP_NOT_FOUND:
@@ -314,7 +354,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
             catch(Exception e)
             {
-                Log.e(TAG,"Connection Error");
                 setErrorText("Connection Error");
                 e.printStackTrace();
             }

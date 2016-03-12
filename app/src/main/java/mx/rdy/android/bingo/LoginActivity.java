@@ -352,13 +352,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 }
             }
             */
-            Log.e(TAG,"doLogin");
+
 
 
             // TODO: register the new account here.
             boolean regresa=doLogin(this.mEmail,this.mPassword);
-            Log.e(TAG,"regresa");
-            Log.e(TAG,"-->"+regresa+"<--");
             return regresa;
         }
 
@@ -368,7 +366,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             showProgress(false);
 
             if (success) {
-                Log.e(TAG,"pos fuga");
+
 
                 //finish();
             } else {
@@ -385,7 +383,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         public boolean doLogin(String usr,String pass)
         {
-            Log.e(TAG,"doLogin->");
+
             URL url;
             String response = "";
             boolean error=false;
@@ -419,7 +417,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 {
                     responseCode = conn.getResponseCode();
                 }
-                Log.e(TAG," response-> "+responseCode);
+                //Log.e(TAG," response-> "+responseCode);
 
                 Intent returnIntent = new Intent();
 
@@ -435,8 +433,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         {
                             response+=line;
                         }
-                        Log.e(TAG,"  <-->>> ");
-                        Log.e(TAG,response);
+
                         JSONObject det = new JSONObject(response);
                         error = det.getBoolean("error");
                         if(error)
@@ -447,7 +444,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         {
                             Log.e(TAG," "+det.getString("token"));
                         }
-                        Log.e(TAG," "+det.getString("detail"));
+
 
 
                         returnIntent.putExtra("token",det.getString("token"));
