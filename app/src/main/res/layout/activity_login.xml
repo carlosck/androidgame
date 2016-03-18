@@ -42,7 +42,7 @@
                 android:inputType="textEmailAddress"
                 android:maxLines="1"
                 android:singleLine="true"
-                android:text="juan"/>
+                android:text="carlos"/>
 
             </android.support.design.widget.TextInputLayout>
 

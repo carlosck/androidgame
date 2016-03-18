@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
+    android:id="@+id/mainContainer"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -14,6 +15,7 @@
     tools:showIn="@layout/activity_main"
     android:visibility="visible">
 
+
     <Button
         style="?android:attr/buttonStyleSmall"
         android:layout_width="wrap_content"
@@ -23,6 +25,8 @@
         android:visibility="visible"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"/>
+
+
 
     <Button
         style="?android:attr/buttonStyleSmall"
@@ -42,4 +46,15 @@
         android:layout_below="@+id/loginButton"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="70dp"/>
+
+    <GridView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/gridView"
+        android:layout_below="@+id/creditsButton"
+        android:layout_centerHorizontal="true"
+        android:numColumns="auto_fit"
+        android:choiceMode="multipleChoiceModal"/>
+
+
 </RelativeLayout>

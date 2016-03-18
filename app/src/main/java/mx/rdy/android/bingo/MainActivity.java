@@ -14,11 +14,16 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -30,14 +35,22 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import io.socket.client.IO;
 import mx.rdy.android.bingo.User;
+
+//sockets
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
+
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -54,6 +67,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private boolean isLoged=false;
     private User user;
+
+
+
+    private static final int SERVERPORT = 5000;
+    private static final String SERVER_IP = "http://192.168.1.117";
+    private Socket mSocket;
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Log.e(TAG,"Click");
                 //Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 //        .setAction("Action", null).show();
             }
@@ -77,8 +100,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             @Override
             public void onClick(View view) {
-                Intent login = new Intent(MainActivity.this,LoginActivity.class);
-                startActivityForResult(login,LOGIN_REQUEST);
+                //Intent login = new Intent(MainActivity.this,LoginActivity.class);
+                //startActivityForResult(login,LOGIN_REQUEST);
+                Log.e(TAG,"EMIT");
+                JSONObject jsonObj = new JSONObject();
+                try {
+                    jsonObj.put("data","from cellphone");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                mSocket.emit("my broadcast event",jsonObj);
 
             }
         });
@@ -104,6 +135,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         });
         if(APIToken==""){
             startLogin();
+            //connectWebSocket();
+
         }
 
 
@@ -148,8 +181,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 //loginButton.setVisibility(View.GONE);
                 detailButton.setVisibility(View.VISIBLE);
                 showProgress(true);
-                mDetailTask = new GetDetailTask(APIToken);
-                mDetailTask.execute((Void) null);
+                connectWebSocket();
+                //mDetailTask = new GetDetailTask(APIToken);
+                //mDetailTask.execute((Void) null);
             }
         }
     }
@@ -245,6 +279,213 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         return user;
     }
 
+    private void connectWebSocket() {
+        try {
+            //mSocket = IO.socket("http://bingos.herokuapp.com");
+            mSocket = IO.socket(SERVER_IP+":5000");
+
+            //Log.e(TAG,"http://192.168.2.34");
+        } catch (URISyntaxException e) {
+            Log.e(TAG,"ERROR -->");
+            throw new RuntimeException(e);
+        }
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError);
+        mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, onConnectError);
+       mSocket.on("new message", onNewMessage);
+        mSocket.on("user joined", onUserJoined);
+        mSocket.on("user left", onUserLeft);
+        mSocket.on("typing", onTyping);
+        mSocket.on("response error",onTest);
+        mSocket.on("list rooms",onRoomList);
+        mSocket.on("broadcast", onBroadcast);
+        mSocket.on("you connect", onYouConnect);
+        mSocket.on("user connect", onUserConnect);
+        mSocket.on("start game", onStartGame);
+        mSocket.connect();
+    }
+
+    private Emitter.Listener onConnectError = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            //Log.e(TAG,(String)args[0]);
+            Log.e(TAG,args.toString());
+            Log.e(TAG,"SE DESCONECTO");
+        }
+    };
+
+    private Emitter.Listener onRoomList = new Emitter.Listener()
+    {
+
+        @Override
+        public void call(Object... args) {
+            JSONObject data = (JSONObject) args[1];
+            JSONArray rooms;
+
+            try {
+                rooms = data.getJSONArray("rooms");
+
+                for(int i =0; i<rooms.length();i++)
+                {
+                    JSONObject object = rooms.getJSONObject(i);
+                    Log.e(TAG,object.getString("name"));
+                    Log.e(TAG,"val="+object.getInt("value"));
+                }
+
+            } catch (JSONException e) {
+                return;
+            }
+            Log.e(TAG," onRoomList");
+        }
+    };
+
+    private Emitter.Listener onBroadcast= new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            //Log.e(TAG,(String)args[0]);
+            JSONObject data = (JSONObject) args[0];
+
+            String username;
+            String message;
+            try {
+                username = data.getString("username");
+                message = data.getString("message");
+            } catch (JSONException e) {
+                return;
+            }
+            Log.e(TAG," onUserJoined");
+            //JSONObject obj = (JSONObject) args[0];
+            /*try {
+                Log.e(TAG,""+obj.getString("data"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }*/
+        }
+    };
+
+    private Emitter.Listener onTest= new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG," on error");
+            JSONObject data = (JSONObject) args[1];
+            try {
+                Log.e(TAG,data.getString("data"));
+                Log.e(TAG,data.getString("total"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+    private Emitter.Listener onYouConnect= new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG," onYouConnect");
+            Log.e(TAG,(String)args[0]);
+            JSONObject data = (JSONObject) args[1];
+            try {
+                Log.e(TAG,data.getString("data"));
+                Log.e(TAG,data.getString("total"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Emitter.Listener onUserConnect= new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG," onUserConnect");
+            if(args.length>1)
+            {
+                Log.e(TAG,args[1].toString());
+                JSONObject data = (JSONObject) args[1];
+                try {
+                    Log.e(TAG,data.getString("data"));
+                    Log.e(TAG,data.getString("total"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            else
+            {
+                Log.e(TAG,args[0].toString());
+            }
+
+
+        }
+    };
+
+    private Emitter.Listener onStartGame= new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG," onStartGame");
+            JSONObject data = (JSONObject) args[1];
+            try {
+                Log.e(TAG,data.getString("data"));
+                Log.e(TAG,data.getString("total"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Emitter.Listener onNewMessage = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            JSONObject data = (JSONObject) args[0];
+            String username;
+            String message;
+            Log.e(TAG," onNewMessage");
+
+
+        }
+    };
+    private Emitter.Listener onUserJoined = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            JSONObject data = (JSONObject) args[0];
+            String username;
+            String message;
+            try {
+                username = data.getString("username");
+                message = data.getString("message");
+            } catch (JSONException e) {
+                return;
+            }
+            Log.e(TAG," onUserJoined");
+        }
+    };
+
+
+    private Emitter.Listener onUserLeft = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            JSONObject data = (JSONObject) args[0];
+            String username;
+            String message;
+            Log.e(TAG," onUserLeft");
+        }
+    };
+
+    private Emitter.Listener onTyping = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            JSONObject data = (JSONObject) args[0];
+            String username;
+            String message;
+            Log.e(TAG," onTyping");
+        }
+    };
+
+
     public class GetDetailTask extends AsyncTask<Void, Void, Boolean> {
 
         private final String token;
@@ -290,7 +531,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             try
             {
-                url = new URL("http://192.168.0.26:3000/login/auth/");
+                url = new URL("https://bingos.herokuapp.com/login/auth/");
+                //url = new URL(SERVER_IP+"/login");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);
@@ -386,4 +628,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     }
+    //sockets
+
 }

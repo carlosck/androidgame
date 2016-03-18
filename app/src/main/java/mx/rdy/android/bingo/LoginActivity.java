@@ -390,7 +390,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             try
             {
-                url = new URL("http://192.168.0.26:3000/login/");
+                //url = new URL("https://bingos.herokuapp.com/login/");
+                url = new URL("http://192.168.1.117:5000/login");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);
@@ -417,7 +418,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 {
                     responseCode = conn.getResponseCode();
                 }
-                //Log.e(TAG," response-> "+responseCode);
+                Log.e(TAG," response-> "+responseCode);
 
                 Intent returnIntent = new Intent();
 
@@ -425,6 +426,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 {
                     case HttpsURLConnection.HTTP_OK:
                         // TODO: 2/5/16 make a read response function
+                        Log.e(TAG," OK ");
                         String line;
                         response="";
 
@@ -433,7 +435,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                         {
                             response+=line;
                         }
-
+                        Log.e(TAG," response "+response);
                         JSONObject det = new JSONObject(response);
                         error = det.getBoolean("error");
                         if(error)
@@ -453,7 +455,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                     break;
                     case HttpURLConnection.HTTP_NOT_FOUND:
-                        Log.e(TAG,"NOT FOUND");
+                        Log.e(TAG,"NOT FOUND s");
                         Log.e(TAG,response);
                         break;
 
@@ -499,7 +501,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         private void setErrorText(String msg)
         {
-            mErrorLogin.setText(msg);
+            //mErrorLogin.setText(msg);
+            Log.e(TAG,msg);
         }
 
 
