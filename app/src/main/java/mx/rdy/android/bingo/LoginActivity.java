@@ -391,7 +391,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             try
             {
                 //url = new URL("https://bingos.herokuapp.com/login/");
-                url = new URL("http://192.168.1.117:5000/login");
+                url = new URL("http://192.168.1.92:5000/login");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);
