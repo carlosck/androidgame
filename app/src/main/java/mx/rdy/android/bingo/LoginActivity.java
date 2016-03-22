@@ -67,14 +67,12 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     private static final String TAG = "Bingo.android.rdy.mx";
     static final int LOGIN_TRUE = 10;
     static final int LOGIN_CANCEL_CODE = 20;
-
+    private Config conf;
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
      */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -90,6 +88,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        conf= new Config();
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
@@ -289,7 +289,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             cursor.moveToNext();
         }
 
-        addEmailsToAutoComplete(emails);
+
     }
 
     @Override
@@ -308,14 +308,6 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
 
-    private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
-        //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
-        ArrayAdapter<String> adapter =
-                new ArrayAdapter<>(LoginActivity.this,
-                        android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
-
-        mEmailView.setAdapter(adapter);
-    }
 
     /**
      * Represents an asynchronous login/registration task used to authenticate
@@ -391,7 +383,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             try
             {
                 //url = new URL("https://bingos.herokuapp.com/login/");
-                url = new URL("http://192.168.1.92:5000/login");
+                url = new URL(conf.getSocketServer()+conf.getSocketServerPort()+"/login");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setReadTimeout(15000);
                 conn.setConnectTimeout(15000);

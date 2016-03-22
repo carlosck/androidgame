@@ -16,45 +16,13 @@
     android:visibility="visible">
 
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/login_text"
-        android:id="@+id/loginButton"
-        android:visibility="visible"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"/>
-
-
-
-    <Button
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/detail_text"
-        android:id="@+id/detailButton"
-        android:visibility="visible"
-        android:layout_below="@+id/loginButton"
-        android:layout_alignStart="@+id/loginButton"/>
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Get Credits"
-        android:id="@+id/creditsButton"
-        android:layout_below="@+id/loginButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="70dp"/>
-
     <GridView
         android:id="@+id/gameListContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/creditsButton"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_centerHorizontal="true"
         android:numColumns="auto_fit"
-        android:choiceMode="multipleChoiceModal"/>
+        android:choiceMode="singleChoice"/>
 
 
 </RelativeLayout>

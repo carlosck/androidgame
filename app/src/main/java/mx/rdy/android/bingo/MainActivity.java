@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -61,20 +62,13 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import io.socket.client.IO;
-import mx.rdy.android.bingo.User;
 
-//sockets
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
 
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = "Bingo.android.rdy.mx";
-    Button loginButton;
-    Button detailButton;
-    Button creditsButton;
+
 
     static final int LOGIN_REQUEST = 1;  // The request code
     static final int LOGIN_TRUE = 10;
@@ -82,29 +76,31 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static String APIToken = "";
     private GetDetailTask mDetailTask = null;
 
-    private boolean isLoged = false;
+    public static String PACKAGE_NAME;
     private User user;
 
-
-    private static final int SERVERPORT = 5000;
-    private static final String SERVER_IP = "http://192.168.1.92";
-    private Socket mSocket;
+    //private Socket mSocket;
 
     private GridView gameListContainer;
+    private Config conf;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      */
     private GoogleApiClient mClient;
-    MyAdapter adapter;
+    private SocketManager socketManager;
+    GameRoomsAdapter adapter;
+    View.OnClickListener gameRoomsListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        conf = new Config();
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
         //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        PACKAGE_NAME = getApplicationContext().getPackageName();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -116,45 +112,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             }
         });
 
-        loginButton = (Button) findViewById(R.id.loginButton);
 
-        loginButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                //Intent login = new Intent(MainActivity.this,LoginActivity.class);
-                //startActivityForResult(login,LOGIN_REQUEST);
-                Log.e(TAG, "EMIT");
-                JSONObject jsonObj = new JSONObject();
-                try {
-                    jsonObj.put("data", "from cellphone");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                mSocket.emit("my broadcast event", jsonObj);
-
-            }
-        });
-
-        detailButton = (Button) findViewById(R.id.detailButton);
-
-        detailButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View view) {
-                startDetail();
-            }
-        });
-
-
-        creditsButton = (Button) findViewById(R.id.creditsButton);
-        creditsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mDetailTask = new GetDetailTask(APIToken);
-                mDetailTask.execute((Void) null);
-            }
-        });
         gameListContainer = (GridView) findViewById(R.id.gameListContainer);
 
 
@@ -162,7 +120,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (APIToken == "") {
             startLogin();
             //connectWebSocket();
-
         }
 
 
@@ -207,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                 APIToken = token;
                 //loginButton.setVisibility(View.GONE);
-                detailButton.setVisibility(View.VISIBLE);
+                //detailButton.setVisibility(View.VISIBLE);
                 showProgress(true);
                 connectWebSocket();
                 //mDetailTask = new GetDetailTask(APIToken);
@@ -307,75 +264,44 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void connectWebSocket() {
-        try {
-            //mSocket = IO.socket("http://bingos.herokuapp.com");
-            mSocket = IO.socket(SERVER_IP + ":5000");
-
-            //Log.e(TAG,"http://192.168.2.34");
-        } catch (URISyntaxException e) {
-            Log.e(TAG, "ERROR -->");
-            throw new RuntimeException(e);
-        }
-        mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError);
-        mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, onConnectError);
-        mSocket.on("new message", onNewMessage);
-        mSocket.on("user joined", onUserJoined);
-        mSocket.on("user left", onUserLeft);
-        mSocket.on("typing", onTyping);
-        mSocket.on("connect", onConnect);
-        mSocket.on("response error", onTest);
-        mSocket.on("list rooms", onRoomList);
-        mSocket.on("broadcast", onBroadcast);
-        mSocket.on("you connect", onYouConnect);
-        mSocket.on("user connect", onUserConnect);
-        mSocket.on("start game", onStartGame);
-        mSocket.connect();
+        socketManager = new SocketManager(APIToken,this);
     }
 
-    private Emitter.Listener onConnectError = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            //Log.e(TAG,(String)args[0]);
-            Log.e(TAG, args.toString());
-            Log.e(TAG, "SE DESCONECTO");
-        }
-    };
-    private Emitter.Listener onConnect = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            Log.e(TAG, "onConnect");
-            JSONObject jsonObj = new JSONObject();
+    public void setRooms(JSONArray rooms)
+    {
+        Object[] arr=new Object[rooms.length()];
+        for(int  i=0;i<rooms.length();i++)
+        {
             try {
-                jsonObj.put("token", APIToken);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            mSocket.emit("set token", jsonObj);
-        }
-    };
-
-    private Emitter.Listener onRoomList = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            Log.e(TAG, " onRoomList");
-            try {
-                addGameRoom((JSONObject) args[0]);
+                arr[i]=rooms.getJSONObject(i);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
-    };
 
-    private void addGameRoom(JSONObject data) throws JSONException {
-        JSONArray rooms = data.getJSONArray("rooms");
+        gameRoomsListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.e(TAG,"tagss->"+view.getTag());
+                socketManager.setGameType((int)view.getTag());
+            }
+        };
+        adapter = new GameRoomsAdapter(this, rooms,gameRoomsListener,getLayoutInflater());
 
-        final ArrayList<String> list = new ArrayList<String>();
 
-        //adapter.setItems();
-        setAdapter(rooms);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG,"run");
+                gameListContainer.setAdapter(adapter);
+                gameListContainer.setNumColumns(3);
 
-        /*adapter = new MyAdapter(this,rooms);
-        gameListContainer.setAdapter(adapter);*/
+            }
+        });
+    }
+
+
+
 
         //gameListContainer.setNumColumns(4);
         //adapter.notifyDataSetChanged();
@@ -403,151 +329,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         final StableArrayAdapter adapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
         gameListContainer.setAdapter(adapter);*/
-    }
-
-    private Emitter.Listener onBroadcast = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            //Log.e(TAG,(String)args[0]);
-            JSONObject data = (JSONObject) args[0];
-
-            String username;
-            String message;
-            try {
-                username = data.getString("username");
-                message = data.getString("message");
-            } catch (JSONException e) {
-                return;
-            }
-            Log.e(TAG, " onUserJoined");
-            //JSONObject obj = (JSONObject) args[0];
-            /*try {
-                Log.e(TAG,""+obj.getString("data"));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }*/
-        }
-    };
-
-    private Emitter.Listener onTest = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            Log.e(TAG, " on error");
-            JSONObject data = (JSONObject) args[1];
-            try {
-                Log.e(TAG, data.getString("data"));
-                Log.e(TAG, data.getString("total"));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-    private Emitter.Listener onYouConnect = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            Log.e(TAG, " onYouConnect");
-            Log.e(TAG, (String) args[0]);
-            JSONObject data = (JSONObject) args[1];
-            try {
-                Log.e(TAG, data.getString("data"));
-                Log.e(TAG, data.getString("total"));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-    private Emitter.Listener onUserConnect = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            Log.e(TAG, " onUserConnect");
-            if (args.length > 1) {
-                Log.e(TAG, args[1].toString());
-                JSONObject data = (JSONObject) args[1];
-                try {
-                    Log.e(TAG, data.getString("data"));
-                    Log.e(TAG, data.getString("total"));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                Log.e(TAG, args[0].toString());
-            }
 
 
-        }
-    };
 
-    private Emitter.Listener onStartGame = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            Log.e(TAG, " onStartGame");
-            JSONObject data = (JSONObject) args[1];
-            try {
-                Log.e(TAG, data.getString("data"));
-                Log.e(TAG, data.getString("total"));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-    };
-
-    private Emitter.Listener onNewMessage = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            JSONObject data = (JSONObject) args[0];
-            String username;
-            String message;
-            Log.e(TAG, " onNewMessage");
-
-
-        }
-    };
-    private Emitter.Listener onUserJoined = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            JSONObject data = (JSONObject) args[0];
-            String username;
-            String message;
-            try {
-                username = data.getString("username");
-                message = data.getString("message");
-            } catch (JSONException e) {
-                return;
-            }
-            Log.e(TAG, " onUserJoined");
-        }
-    };
-
-
-    private Emitter.Listener onUserLeft = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            JSONObject data = (JSONObject) args[0];
-            String username;
-            String message;
-            Log.e(TAG, " onUserLeft");
-        }
-    };
-
-    private Emitter.Listener onTyping = new Emitter.Listener() {
-        @Override
-        public void call(final Object... args) {
-
-            JSONObject data = (JSONObject) args[0];
-            String username;
-            String message;
-            Log.e(TAG, " onTyping");
-        }
-    };
 
     @Override
     public void onStart() {
@@ -729,77 +513,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     return
     }*/
     //sockets
-    public class MyAdapter extends BaseAdapter {
 
-        private Context mContext;
-        private JSONArray mThumbIds;
-
-        public MyAdapter(Context c,JSONArray items) {
-            mContext = c;
-            mThumbIds = items;
-        }
-        public void setItems(JSONArray items)
-        {
-            mThumbIds = items;
-        }
-        @Override
-        public int getCount() {
-            return mThumbIds.length();
-        }
-
-        @Override
-        public JSONObject getItem(int arg0) {
-            JSONObject item=null;
-            try {
-                item= mThumbIds.getJSONObject(arg0);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return item;
-        }
-
-        @Override
-        public long getItemId(int arg0) {
-            return arg0;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-
-            View grid;
-
-            if (convertView == null) {
-                grid = new View(mContext);
-                LayoutInflater inflater = getLayoutInflater();
-                grid = inflater.inflate(R.layout.mygrid_layout, parent, false);
-            } else {
-                grid = (View) convertView;
-            }
-
-            // ImageView imageView = (ImageView)grid.findViewById(R.id.image);
-            //imageView.setImageResource(mThumbIds[position]);
-
-            ImageView imageView = (ImageView) grid.findViewById(R.id.image);
-            GridView.LayoutParams vp =
-                    new GridView.LayoutParams(Toolbar.LayoutParams.WRAP_CONTENT,
-                            Toolbar.LayoutParams.WRAP_CONTENT);
-            int id = 0;
-            try {
-                JSONObject object = null;
-
-                object = mThumbIds.getJSONObject(position);
-                //id = getResources().getIdentifier(object.getString("name").toLowerCase(), "drawable", getPackageName());
-                id= getResources().getIdentifier("bingo", "drawable", getPackageName());
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            imageView.setLayoutParams(vp);
-            imageView.setImageResource(id);
-
-            return grid;
-        }
-    }
 
 
 
