@@ -23,6 +23,7 @@ public class SocketManager {
     private String APIToken = "";
     private Config conf;
     private MainActivity parent;
+    private String currentGame = "/";
     public SocketManager(String APIToken,MainActivity par) {
         this.APIToken = APIToken;
         this.parent = par;
@@ -55,7 +56,9 @@ public class SocketManager {
         mSocket.on("broadcast", onBroadcast);
         mSocket.on("you connect", onYouConnect);
         mSocket.on("user connect", onUserConnect);
+        mSocket.on("init game", onInitGame);
         mSocket.on("start game", onStartGame);
+        mSocket.on("join room", onJoinRoom);
         mSocket.connect();
     }
 
@@ -162,7 +165,7 @@ public class SocketManager {
                 Log.e(TAG, args[1].toString());
                 JSONObject data = (JSONObject) args[1];
                 try {
-                    Log.e(TAG, data.getString("data"));
+                    Log.e(TAG, data.getString("users"));
                     Log.e(TAG, data.getString("total"));
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -175,15 +178,65 @@ public class SocketManager {
         }
     };
 
+    private Emitter.Listener onJoinRoom = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, "onJoinRoom");
+            JSONObject data = (JSONObject) args[0];
+            try {
+                Log.e(TAG, data.getString("data"));
+                Log.e(TAG, data.getString("gametype"));
+                JSONArray players = data.getJSONArray("players");
+                for(int i=0;i<players.length();i++)
+                {
+                    String player= players.getString(i);
+                    Log.e(TAG,player);
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+    private Emitter.Listener onInitGame = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, " onInitGame");
+            JSONObject data = (JSONObject) args[0];
+            try {
+                Integer gametype= data.getInt("game");
+                String cardString = "";
+                JSONArray card = data.getJSONArray("card");
+                for(int i=0;i<card.length();i++)
+                {
+                    cardString+= "_"+card.getString(i);
+                    Log.e(TAG,cardString);
+                }
+
+                Log.e(TAG, " "+gametype);
+                Log.e(TAG, card.toString());
+
+                switch(gametype)
+                {
+                    case 0: parent.startBingo(cardString);
+                        break;
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
     private Emitter.Listener onStartGame = new Emitter.Listener() {
         @Override
         public void call(final Object... args) {
 
             Log.e(TAG, " onStartGame");
-            JSONObject data = (JSONObject) args[1];
+            JSONObject data = (JSONObject) args[0];
             try {
-                Log.e(TAG, data.getString("data"));
-                Log.e(TAG, data.getString("total"));
+                Log.e(TAG, data.getString("game"));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -245,12 +298,17 @@ public class SocketManager {
     {
         safeEmit("gametype","type",gameType);
     }
+    private void createBingo(JSONArray card)
+    {
+
+    }
     //safeEmit "Change room", "room",1
     private void safeEmit(String header,String type,int value)
     {
         JSONObject jsonObj = new JSONObject();
         try {
             jsonObj.put(type, value);
+            jsonObj.put("token", APIToken);
         } catch (JSONException e) {
             e.printStackTrace();
         }

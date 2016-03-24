@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     static final int LOGIN_REQUEST = 1;  // The request code
+    static final int BINGO_REQUEST = 2;  // The request code
     static final int LOGIN_TRUE = 10;
     //private static String APIToken = "30576741c0bbc71743d933aff8506fd4a5efbaf4";
     private static String APIToken = "";
@@ -372,7 +373,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         AppIndex.AppIndexApi.end(mClient, viewAction);
         mClient.disconnect();
     }
-
+    public void startBingo(String card)
+    {
+        Intent bingo = new Intent(MainActivity.this, BingoActivity.class);
+        bingo.putExtra("token", APIToken);
+        bingo.putExtra("card", card);
+        startActivityForResult(bingo, BINGO_REQUEST);
+    }
 
     public class GetDetailTask extends AsyncTask<Void, Void, Boolean> {
 
