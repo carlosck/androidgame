@@ -9,9 +9,11 @@ import android.content.Loader;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -62,7 +64,7 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
-
+import io.socket.client.IO;
 
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -266,6 +268,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private void connectWebSocket() {
         socketManager = new SocketManager(APIToken,this);
+        try {
+            socketManager.setSocket(IO.socket(conf.getSocketServer()+conf.getSocketServerPort()));
+            socketManager.startClient();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setRooms(JSONArray rooms)
@@ -304,32 +312,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
 
-        //gameListContainer.setNumColumns(4);
-        //adapter.notifyDataSetChanged();
 
-
-        /*for(int i =0; i<rooms.length();i++)
-        {
-            JSONObject object = null;
-
-            object = rooms.getJSONObject(i);
-            int id = getResources().getIdentifier(object.getString("name").toLowerCase(), "drawable", getPackageName());
-            ImageView imageView = new ImageView(this);
-            GridView.LayoutParams vp =
-                    new GridView.LayoutParams(Toolbar.LayoutParams.WRAP_CONTENT,
-                            Toolbar.LayoutParams.WRAP_CONTENT);
-
-            imageView.setLayoutParams(vp);
-            imageView.setImageResource(id);
-
-            list.add(object.getString("name"));
-            Log.e(TAG,object.getString("name"));
-            Log.e(TAG,"val="+object.getInt("value"));
-
-        }
-
-        final StableArrayAdapter adapter = new StableArrayAdapter(this, android.R.layout.simple_list_item_1, list);
-        gameListContainer.setAdapter(adapter);*/
 
 
 
@@ -373,11 +356,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         AppIndex.AppIndexApi.end(mClient, viewAction);
         mClient.disconnect();
     }
-    public void startBingo(String card)
+    public void startBingo(JSONArray card)
     {
         Intent bingo = new Intent(MainActivity.this, BingoActivity.class);
         bingo.putExtra("token", APIToken);
-        bingo.putExtra("card", card);
+        Log.e(TAG,"card -->");
+        Log.e(TAG,card.toString());
+        bingo.putExtra("room", socketManager.getCurrentRoom());
+        bingo.putExtra("card", card.toString());
+
+        //bingo.putExtra("socketManager",(Parcelable) socketManager);
         startActivityForResult(bingo, BINGO_REQUEST);
     }
 

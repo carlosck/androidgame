@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TextView
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_width="fill_parent"
+    android:layout_height="90dp"
     android:textAppearance="?android:attr/textAppearanceLarge"
     android:text="Large Text"
     android:id="@+id/bingo_item"
     android:layout_gravity="center_horizontal"
-    xmlns:android="http://schemas.android.com/apk/res/android"/>
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:textAlignment="center"
+    android:textColor="@color/abc_primary_text_material_light"
+    android:textSize="30dp"
+    android:background="@color/accent_material_dark"/>

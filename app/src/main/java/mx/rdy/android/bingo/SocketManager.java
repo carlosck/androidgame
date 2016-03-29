@@ -1,11 +1,14 @@
 package mx.rdy.android.bingo;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
@@ -16,26 +19,26 @@ import io.socket.emitter.Emitter;
 /**
  * Created by Seca on 3/21/16.
  */
-public class SocketManager {
+public class SocketManager  {
 
     private static final String TAG = "Bingo.android.rdy.mx";
-    private Socket mSocket;
+    private static Socket mSocket;
     private String APIToken = "";
     private Config conf;
     private MainActivity parent;
-    private String currentGame = "/";
+    private String currentRoom = "/";
     public SocketManager(String APIToken,MainActivity par) {
         this.APIToken = APIToken;
         this.parent = par;
         conf = new Config();
-        startClient();
+        //startClient();
     }
 
 
     public void startClient()
     {
 
-        try {
+        /*try {
             //mSocket = IO.socket("http://bingos.herokuapp.com");
             mSocket = IO.socket(conf.getSocketServer()+conf.getSocketServerPort());
 
@@ -43,7 +46,7 @@ public class SocketManager {
         } catch (URISyntaxException e) {
             Log.e(TAG, "ERROR -->");
             throw new RuntimeException(e);
-        }
+        }*/
         mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError);
         mSocket.on(Socket.EVENT_CONNECT_TIMEOUT, onConnectError);
         mSocket.on("new message", onNewMessage);
@@ -185,8 +188,12 @@ public class SocketManager {
             Log.e(TAG, "onJoinRoom");
             JSONObject data = (JSONObject) args[0];
             try {
-                Log.e(TAG, data.getString("data"));
+                Log.e(TAG, data.getString("gameroom"));
+                currentRoom = data.getString("gameroom");
+                Log.e(TAG, "gametype->");
                 Log.e(TAG, data.getString("gametype"));
+                //currentGame= data.getString("gametype");
+
                 JSONArray players = data.getJSONArray("players");
                 for(int i=0;i<players.length();i++)
                 {
@@ -209,18 +216,18 @@ public class SocketManager {
                 Integer gametype= data.getInt("game");
                 String cardString = "";
                 JSONArray card = data.getJSONArray("card");
-                for(int i=0;i<card.length();i++)
+                /*for(int i=0;i<card.length();i++)
                 {
                     cardString+= "_"+card.getString(i);
                     Log.e(TAG,cardString);
                 }
 
                 Log.e(TAG, " "+gametype);
-                Log.e(TAG, card.toString());
+                Log.e(TAG, card.toString());*/
 
                 switch(gametype)
                 {
-                    case 0: parent.startBingo(cardString);
+                    case 0: parent.startBingo(card);
                         break;
                 }
 
@@ -298,10 +305,7 @@ public class SocketManager {
     {
         safeEmit("gametype","type",gameType);
     }
-    private void createBingo(JSONArray card)
-    {
 
-    }
     //safeEmit "Change room", "room",1
     private void safeEmit(String header,String type,int value)
     {
@@ -313,5 +317,21 @@ public class SocketManager {
             e.printStackTrace();
         }
         mSocket.emit(header, jsonObj);
+    }
+
+    public static synchronized Socket getSocket()
+    {
+        return mSocket;
+    }
+
+    public synchronized void setSocket(Socket socket)
+    {
+        SocketManager.mSocket = socket;
+        startClient();
+    }
+
+    public String getCurrentRoom()
+    {
+        return currentRoom;
     }
 }
