@@ -75,6 +75,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int LOGIN_REQUEST = 1;  // The request code
     static final int BINGO_REQUEST = 2;  // The request code
     static final int LOGIN_TRUE = 10;
+    static final int LOOSE= 100;
+    static final int WIN= 101;
+    TextView statusText;
     //private static String APIToken = "30576741c0bbc71743d933aff8506fd4a5efbaf4";
     private static String APIToken = "";
     private GetDetailTask mDetailTask = null;
@@ -117,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
         gameListContainer = (GridView) findViewById(R.id.gameListContainer);
-
+        statusText = (TextView) findViewById(R.id.statusText);
 
 
         if (APIToken == "") {
@@ -159,21 +162,54 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         //super.onActivityResult(requestCode, resultCode, data);
+        Log.e(TAG,"requestCode->"+requestCode);
+        Log.e(TAG,"resultCode->"+resultCode);
+        switch (requestCode)
+        {
+            case LOGIN_REQUEST:
+                if (resultCode == LOGIN_TRUE) {
+                    String token = (String) data.getSerializableExtra("token");
 
-        if (requestCode == LOGIN_REQUEST) {
+                    APIToken = token;
+                    //loginButton.setVisibility(View.GONE);
+                    //detailButton.setVisibility(View.VISIBLE);
+                    showProgress(true);
+                    connectWebSocket();
+                    //mDetailTask = new GetDetailTask(APIToken);
+                    //mDetailTask.execute((Void) null);
+                }
+            break;
+            case BINGO_REQUEST:
+                if(resultCode==WIN)
+                {
+                    final String price = (String) data.getStringExtra("price");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e(TAG,"run");
+                            statusText.setText("Ganaste "+price);
 
-            if (resultCode == LOGIN_TRUE) {
-                String token = (String) data.getSerializableExtra("token");
+                        }
+                    });
+                }
+                else if(resultCode==LOOSE)
+                {
+                    final String winner = (String) data.getStringExtra("winner");
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e(TAG,"run");
+                            statusText.setText("ganó "+winner);
 
-                APIToken = token;
-                //loginButton.setVisibility(View.GONE);
-                //detailButton.setVisibility(View.VISIBLE);
-                showProgress(true);
-                connectWebSocket();
-                //mDetailTask = new GetDetailTask(APIToken);
-                //mDetailTask.execute((Void) null);
-            }
+                        }
+                    });
+                }
+
+            break;
         }
+
+
+
     }
 
 

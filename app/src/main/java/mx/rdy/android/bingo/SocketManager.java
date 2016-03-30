@@ -27,9 +27,16 @@ public class SocketManager  {
     private Config conf;
     private MainActivity parent;
     private String currentRoom = "/";
+    private BingoActivity bingo;
     public SocketManager(String APIToken,MainActivity par) {
         this.APIToken = APIToken;
         this.parent = par;
+        conf = new Config();
+        //startClient();
+    }
+    public SocketManager(String APIToken,BingoActivity par) {
+        this.APIToken = APIToken;
+        this.bingo = par;
         conf = new Config();
         //startClient();
     }
@@ -62,6 +69,7 @@ public class SocketManager  {
         mSocket.on("init game", onInitGame);
         mSocket.on("start game", onStartGame);
         mSocket.on("join room", onJoinRoom);
+
         mSocket.connect();
     }
 
@@ -206,6 +214,7 @@ public class SocketManager  {
             }
         }
     };
+
     private Emitter.Listener onInitGame = new Emitter.Listener() {
         @Override
         public void call(final Object... args) {
@@ -216,14 +225,6 @@ public class SocketManager  {
                 Integer gametype= data.getInt("game");
                 String cardString = "";
                 JSONArray card = data.getJSONArray("card");
-                /*for(int i=0;i<card.length();i++)
-                {
-                    cardString+= "_"+card.getString(i);
-                    Log.e(TAG,cardString);
-                }
-
-                Log.e(TAG, " "+gametype);
-                Log.e(TAG, card.toString());*/
 
                 switch(gametype)
                 {
@@ -310,6 +311,7 @@ public class SocketManager  {
     private void safeEmit(String header,String type,int value)
     {
         JSONObject jsonObj = new JSONObject();
+
         try {
             jsonObj.put(type, value);
             jsonObj.put("token", APIToken);
@@ -334,4 +336,5 @@ public class SocketManager  {
     {
         return currentRoom;
     }
+
 }

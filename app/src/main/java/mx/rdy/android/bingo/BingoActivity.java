@@ -1,5 +1,6 @@
 package mx.rdy.android.bingo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -8,12 +9,14 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.GridView;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 public class BingoActivity extends AppCompatActivity {
 
@@ -24,7 +27,10 @@ public class BingoActivity extends AppCompatActivity {
     String APIToken;
     String currentRoom;
     SocketManager socketManager;
+    private TextView bingoGameNumber;
     private static Socket mSocket;
+    static final int LOOSE= 100;
+    static final int WIN= 101;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,8 +50,16 @@ public class BingoActivity extends AppCompatActivity {
         Bundle b = getIntent().getExtras();
         APIToken = b.getString("token");
         currentRoom = b.getString("room");
-        socketManager = new SocketManager(APIToken,null);
+        socketManager = new SocketManager(APIToken,this);
+        //socketManager.startClient();
+        //socketManager.setBingo(this);
         mSocket = socketManager.getSocket();
+
+        mSocket.on("item verified", onItemVerified);
+        mSocket.on("new item", onNewItem);
+        mSocket.on("you win", onYouWin);
+        mSocket.on("you loose", onYouLoose);
+
         JSONArray cardArray=null;
 
         try {
@@ -76,6 +90,7 @@ public class BingoActivity extends AppCompatActivity {
 
 
         bingoItemsContainer = (GridView) findViewById(R.id.BingoGrid);
+        bingoGameNumber= (TextView) findViewById(R.id.BingoGameNumber);
         adapter = new BingoCardAdapter(this, cardArray,cardListenner,getLayoutInflater());
         bingoItemsContainer.setAdapter(adapter);
     }
@@ -92,5 +107,104 @@ public class BingoActivity extends AppCompatActivity {
         }
         mSocket.emit(header, jsonObj);
     }
+
+    public void itemVerified(final int item)
+    {
+        Log.e(TAG,"itemVerified");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG,"run");
+                View view= bingoItemsContainer.findViewWithTag(item);
+                view.setAlpha(0.1f);
+
+            }
+        });
+
+    }
+    private Emitter.Listener onItemVerified = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, "onItemVerified");
+            JSONObject data = (JSONObject) args[0];
+            int gametype=0;
+            try {
+                int item = data.getInt("item");
+                gametype=data.getInt("gametype");
+                Log.e(TAG, data.getString("win"));
+                Log.e(TAG,"item->"+ item);
+                itemVerified(item);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Emitter.Listener onNewItem = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, "onNewItem");
+            JSONObject data = (JSONObject) args[0];
+            int gametype=0;
+            try {
+                final int newitem = data.getInt("item");
+                Log.e(TAG,"item->"+ newitem);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.e(TAG,"run");
+                        bingoGameNumber.setText(Integer.toString(newitem));
+
+                    }
+                });
+
+                //itemVerified(item);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Emitter.Listener onYouWin = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, "onYouWin");
+            JSONObject data = (JSONObject) args[0];
+            Intent returnIntent = new Intent();
+            try {
+                String price = data.getString("price");
+                Log.e(TAG,"PRICE->"+price);
+                returnIntent.putExtra("price",price);
+                setResult(WIN, returnIntent);
+                finish();
+                //itemVerified(item);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Emitter.Listener onYouLoose = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+
+            Log.e(TAG, "onYouLoose");
+            JSONObject data = (JSONObject) args[0];
+
+            Intent returnIntent = new Intent();
+            try {
+                String winner = data.getString("winner");
+                returnIntent.putExtra("winner",winner);
+                setResult(LOOSE, returnIntent);
+                finish();
+                //itemVerified(item);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    };
 
 }

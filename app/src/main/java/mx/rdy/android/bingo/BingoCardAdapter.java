@@ -23,6 +23,7 @@ public class BingoCardAdapter extends BaseAdapter{private Context mContext;
     private View.OnClickListener clickListener;
     private LayoutInflater inflater;
 
+
     public BingoCardAdapter(Context c,JSONArray items, View.OnClickListener listenner,LayoutInflater inflater) {
         mContext = c;
         mThumbIds = items;
@@ -53,8 +54,8 @@ public class BingoCardAdapter extends BaseAdapter{private Context mContext;
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        View grid;
 
+        View grid;
         if (convertView == null) {
             //grid = new View(mContext);
             //LayoutInflater inflater = getLayoutInflater();
@@ -85,4 +86,6 @@ public class BingoCardAdapter extends BaseAdapter{private Context mContext;
 
         return grid;
     }
+
+
 }
